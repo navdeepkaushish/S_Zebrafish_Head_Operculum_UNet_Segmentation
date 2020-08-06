@@ -26,8 +26,8 @@ import argparse
 import json
 import logging
 
-from cytomine import Cytomine
-from cytomine.models import Property, Annotation, AnnotationTerm, AnnotationCollection,Project, ImageInstanceCollection
+#from cytomine import Cytomine
+#from cytomine.models import Property, Annotation, AnnotationTerm, AnnotationCollection,Project, ImageInstanceCollection
 ###############################################################################
 if __name__ == "__main__":
 # =============================================================================
@@ -49,16 +49,16 @@ if __name__ == "__main__":
 # =============================================================================
 ###############################################################################
 
-    image_path = glob.glob('./data/*.bmp') #full image path
+    image_path = glob.glob('./data/*.bmp')
 
 ###############################################################################
-    h_model = load_model('./models/head_tversky_9963.hdf5', compile=False) #model for head segmentation
+    h_model = load_model('./models/head_tversky_9963.hdf5', compile=False)
     h_model.compile(optimizer='adam', loss= tversky_loss,
               metrics=['accuracy'])
-    op_model = load_model('./models/op_ce_9989.hdf5') #model for operculum
+    op_model = load_model('./models/op_ce_9989.hdf5')
 #model = load_model('./models/all_tversky_9959.hdf5') #for three class
 ###############################################################################
-    image = load_img(image_path[10])#for single image for testing
+    image = load_img(image_path[10])#for single image
     image = img_to_array(image)
     org_size = image.shape[:2]
     size = (256,256)
@@ -80,10 +80,8 @@ if __name__ == "__main__":
     op_polygon = make_polygon(op_mask)
     op_head_ratio = op_polygon[0].area / h_polygon[0].area
 
-    cred = json.load(open('credentials-jsnow.json'))
-
 # =============================================================================
-#     with Cytomine(host= cred['host'], public_key=cred['public_key'], private_key=cred['private_key']) as conn:
+#     with Cytomine(host='research.cytomine.be', public_key='66e2e74c-3959-4cae-94a7-13d7acd332ac', private_key='109eb813-0515-4023-8499-30e251fe15eb') as conn:
 #         
 #         annotations = Annotation(location=h_polygon.wkt, id_image= args.id, id_terms = args.t, id_project = args.p).save()
 #         annotations = Annotation(location=op_polygon.wkt, id_image= args.i, id_terms = args.t, id_project = args.p).save()
