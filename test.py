@@ -55,39 +55,41 @@ if __name__ == "__main__":
     
 
     # =============================================================================
-    with Cytomine(host='https://research.cytomine.be', public_key='66e2e74c-3959-4cae-94a7-13d7acd332ac', private_key='109eb813-0515-4023-8499-30e251fe15eb') as conn:
-        image_path = glob.glob(os.path.join(args.wd +'data'+'/*.bmp'))
-        filename =  os.path.basename(image_path[0])
-        image = load_img(image_path[0])  # for single image
-        image = img_to_array(image)
-        image = image[::-1,:]
-        image = np.ascontiguousarray(image, dtype=np.uint8)
-        org_size = image.shape[:2]
-        size = (256, 256)
-
-        h_mask = predict_mask(image, h_model)
-
-        cropped_image = cropped(h_mask, image)
-
-        op_mask = predict_mask(cropped_image, op_model)
-
-        h_upsize = org_size
-        op_upsize = cropped_image.shape[:2]
-
-        op_mask = tf.image.resize(op_mask, op_upsize, method='bilinear')
-        op_mask = op_pad_up(h_mask, op_mask, size, org_size)
-        h_mask = tf.image.resize(h_mask, h_upsize, method='bilinear')
-
-        h_polygon = make_polygon(h_mask)
-        op_polygon = make_polygon(op_mask)
-        #op_head_ratio = op_polygon[0].area / h_polygon[0].area
-        image_instances = ImageInstanceCollection().fetch_with_filter("project", 142037659)
-        image_id = next((x.id for x in image_instances if x.originalFilename == filename), None)
-        annotations = AnnotationCollection()
-        annotations.append(Annotation(location=h_polygon[0].wkt, id_image=image_id, id_terms = 143971108, id_project=142037659))
-        annotations.append(Annotation(location=op_polygon[0].wkt, id_image=image_id, id_term = 143971084, id_project=142037659))
-        annotations.save()
-
+# =============================================================================
+#     with Cytomine(host='https://research.cytomine.be', public_key='66e2e74c-3959-4cae-94a7-13d7acd332ac', private_key='109eb813-0515-4023-8499-30e251fe15eb') as conn:
+#         image_path = glob.glob(os.path.join(args.wd +'data'+'/*.bmp'))
+#         filename =  os.path.basename(image_path[0])
+#         image = load_img(image_path[0])  # for single image
+#         image = img_to_array(image)
+#         image = image[::-1,:]
+#         image = np.ascontiguousarray(image, dtype=np.uint8)
+#         org_size = image.shape[:2]
+#         size = (256, 256)
+# 
+#         h_mask = predict_mask(image, h_model)
+# 
+#         cropped_image = cropped(h_mask, image)
+# 
+#         op_mask = predict_mask(cropped_image, op_model)
+# 
+#         h_upsize = org_size
+#         op_upsize = cropped_image.shape[:2]
+# 
+#         op_mask = tf.image.resize(op_mask, op_upsize, method='bilinear')
+#         op_mask = op_pad_up(h_mask, op_mask, size, org_size)
+#         h_mask = tf.image.resize(h_mask, h_upsize, method='bilinear')
+# 
+#         h_polygon = make_polygon(h_mask)
+#         op_polygon = make_polygon(op_mask)
+#         #op_head_ratio = op_polygon[0].area / h_polygon[0].area
+#         image_instances = ImageInstanceCollection().fetch_with_filter("project", 142037659)
+#         image_id = next((x.id for x in image_instances if x.originalFilename == filename), None)
+#         annotations = AnnotationCollection()
+#         annotations.append(Annotation(location=h_polygon[0].wkt, id_image=image_id, id_terms = 143971108, id_project=142037659))
+#         annotations.append(Annotation(location=op_polygon[0].wkt, id_image=image_id, id_term = 143971084, id_project=142037659))
+#         annotations.save()
+# 
+# =============================================================================
          # project 142037659
 
 

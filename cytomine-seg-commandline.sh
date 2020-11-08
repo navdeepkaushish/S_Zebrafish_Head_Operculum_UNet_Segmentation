@@ -16,3 +16,5 @@ python cytomine-stardist.py -p 528050 -i 528460 -r 154121648 -t 154122471 -u 263
 
 #demo-counting
 #python cytomine-stardist.py -p 138066737 -i 138066995 -r 138066725 -t 154377928 -u 701 -wd "/home/maree/Documents/_bds/stardis/cytomine/"
+
+python run.py 
