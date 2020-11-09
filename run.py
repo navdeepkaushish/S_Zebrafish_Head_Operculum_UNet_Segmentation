@@ -46,15 +46,16 @@ if __name__ == "__main__":
     cred = json.load(open('credentials-jsnow.json'))
 
     ###############################################################################
-    h_model = load_model('./models/head_tversky_9963.hdf5', compile=False)
-    h_model.compile(optimizer='adam', loss=tversky_loss,
+    with tf.device('/cpu:0'):
+        h_model = load_model('./models/head_tversky_9963.hdf5', compile=False)
+        h_model.compile(optimizer='adam', loss=tversky_loss,
                     metrics=['accuracy'])
-    op_model = load_model('./models/op_ce_9989.hdf5')
+        op_model = load_model('./models/op_ce_9989.hdf5')
     # model = load_model('./models/all_tversky_9959.hdf5') #for three class
     ###############################################################################
 
     # =============================================================================
-    with Cytomine(host='https:/research.cytomine.be', public_key='66e2e74c-3959-4cae-94a7-13d7acd332ac',
+    with Cytomine(host='https://research.cytomine.be', public_key='66e2e74c-3959-4cae-94a7-13d7acd332ac',
                   private_key='109eb813-0515-4023-8499-30e251fe15eb') as conn:
         images = ImageInstanceCollection().fetch_with_filter('project', args.p)
 
@@ -81,6 +82,8 @@ if __name__ == "__main__":
             img = img_to_array(img)
 
             filename = os.path.basename(image_paths[i])
+            fname, fext = os.path.splitext(filename)
+            fname  = int(fname)
             org_size = img.shape[:2]
 
             h_mask = predict_mask(img, h_model)
@@ -97,12 +100,12 @@ if __name__ == "__main__":
             h_polygon = make_polygon(h_mask)
             op_polygon = make_polygon(op_mask)
 
-            image_id = next((x.id for x in images if x.originalFilename == filename), None)
+         #   image_id = next((x.id for x in images if x.id == fname), None)
             annotations = AnnotationCollection()
             annotations.append(
-                Annotation(location=h_polygon[0].wkt, id_image=image_id, id_terms=143971108, id_project=args.p))
+                Annotation(location=h_polygon[0].wkt, id_image=fname, id_terms=143971108, id_project=args.p))
             annotations.append(
-                Annotation(location=op_polygon[0].wkt, id_image=image_id, id_term=143971084, id_project=args.p))
+                Annotation(location=op_polygon[0].wkt, id_image=fname, id_term=143971084, id_project=args.p))
             annotations.save()
 
         # project 142037659
