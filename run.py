@@ -1,4 +1,6 @@
 from __future__ import print_function
+
+import glob
 import os
 import sys
 import json
@@ -34,10 +36,10 @@ def main(argv):
 	with CytomineJob.from_cli(argv) as conn:
 		conn.job.update(status=Job.RUNNING, progress=0, statusComment='Intialization...')
 		base_path = "{}".format(os.getenv('HOME')) #Mandatory for Singularity
-		working_path = os.path.join(base_path, str(job.id))
+		working_path = os.path.join(base_path, str(conn.job.id))
 
 		#Loading models from models directory
-		with tf.device('/cpu:0')
+		with tf.device('/cpu:0'):
 			h_model = load_model('models/head_tversky_9963.hdf5', compile=False) #head model
 			h_model.compile(optimizer='adam', loss=tversky_loss,
 					metrics=['accuracy'])
@@ -46,15 +48,15 @@ def main(argv):
 		#Select images to process
 		images = ImageInstanceCollection().fetch_with_filter('project', conn.parameters.cytomine_id_project)
 		if conn.parameters.cytomine_id_images != 'all': #select only given image instances = [image for image in image_instances if image.id in id_list]
-            images = [_ for _ in images if _.id
-                      in map(lambda x: int(x.strip()),
-                             args.i.split(','))]
-        images_id = [image.id for image in images]
+			images = [_ for _ in images if _.id
+					  in map(lambda x: int(x.strip()),
+							 conn.parameters.cytomine_id_images.split(','))]
+		images_id = [image.id for image in images]
 
 		# Download selected images into 'working_directory'
 		img_path = os.path.join(working_path, 'images')
 		if not os.path.exists(img_path):
-			os.makedirs(image_path)
+			os.makedirs(img_path)
 
 		for image in conn.monitor(
 			images, start=2, end=50, period=0.1,
@@ -66,34 +68,34 @@ def main(argv):
 
 		# Prepare image file paths from image directory for execution
 		conn.job.update(progress=50,
-                        statusComment="Preparing data for execution..")
+						statusComment="Preparing data for execution..")
 		image_paths = glob.glob(os.path.join(img_path,'/*'))
 		for i in range(len(image_paths)):
-            img = Image.open(image_paths[i])
-            img = img_to_array(img)
+			img = Image.open(image_paths[i])
+			img = img_to_array(img)
 
-            filename = os.path.basename(image_paths[i])
-            fname, fext = os.path.splitext(filename)
-            fname  = int(fname)
-            org_size = img.shape[:2]
+			filename = os.path.basename(image_paths[i])
+			fname, fext = os.path.splitext(filename)
+			fname  = int(fname)
+			org_size = img.shape[:2]
 
-            h_mask = predict_mask(img, h_model)
-            size = h_mask.shape[:2]
-            cropped_image = cropped(h_mask, img)
+			h_mask = predict_mask(img, h_model)
+			size = h_mask.shape[:2]
+			cropped_image = cropped(h_mask, img)
 
-            op_mask = predict_mask(cropped_image, op_model)
-            op_upsize = cropped_image.shape[:2]
+			op_mask = predict_mask(cropped_image, op_model)
+			op_upsize = cropped_image.shape[:2]
 
-            op_mask = tf.image.resize(op_mask, op_upsize, method='bilinear')
-            op_mask = op_pad_up(h_mask, op_mask, size, org_size)
-            h_mask = tf.image.resize(h_mask, org_size, method='bilinear')
+			op_mask = tf.image.resize(op_mask, op_upsize, method='bilinear')
+			op_mask = op_pad_up(h_mask, op_mask, size, org_size)
+			h_mask = tf.image.resize(h_mask, org_size, method='bilinear')
 
-            h_polygon = make_polygon(h_mask)
-            op_polygon = make_polygon(op_mask)
+			h_polygon = make_polygon(h_mask)
+			op_polygon = make_polygon(op_mask)
 
 			conn.job.update(
-            status=Job.RUNNING, progress=95,
-            statusComment="Uploading new annotations to Cytomine server..")
+			status=Job.RUNNING, progress=95,
+			statusComment="Uploading new annotations to Cytomine server..")
 
 			annotations = AnnotationCollection()
 			annotations.append(Annotation(location=h_polygon[0].wkt, id_image=fname, id_terms = 143971108, id_project=conn.parameters.cytomine_id_project))
