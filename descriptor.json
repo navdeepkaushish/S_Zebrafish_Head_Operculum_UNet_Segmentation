@@ -1,7 +1,7 @@
 {
-    "name": "Segment_zebrafish",
+    "name": "S_Zebrafish_Head_Operculum_UNet_Segmentation",
     "container-image": {
-        "image": "nkumar/s_segment_zebrafish",
+        "image": "navdeepkaushish/s_zebrafish_head_operculum_unet_segmentation",
         "type": "singularity"
     },
     "schema-version": "cytomine-0.1",
