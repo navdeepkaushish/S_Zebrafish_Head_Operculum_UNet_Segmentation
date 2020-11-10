@@ -1,17 +1,12 @@
-# -*- coding: utf-8 -*-
-"""
-Created on Tue Aug  4 12:37:10 2020
-
-@author: Navdeep Kumar
-"""
-
-import numpy as np
-import random
+from __future__ import print_function
 import os
-import glob
+import sys
+import json
+from shapely.geometry import Point, Polygon
+
 from PIL import Image
-import matplotlib.pyplot as plt
 import cv2
+
 import tensorflow as tf
 from tensorflow.keras.models import Model, load_model
 from tensorflow.keras.optimizers import SGD
@@ -25,59 +20,55 @@ import json
 import logging
 
 from cytomine import Cytomine
-from cytomine.models import Property, Annotation, AnnotationTerm, AnnotationCollection, Project, ImageInstanceCollection
+from cytomine import CytomineJob
+from cytomine.models import (
+			 Property, 
+			 Annotation,
+			 AnnotationTerm, 
+			 AnnotationCollection,
+			 Project, 
+			 ImageInstanceCollection,
+			 Job)
 
-###############################################################################
-if __name__ == "__main__":
+def main(argv):
+	with CytomineJob.from_cli(argv) as conn:
+		conn.job.update(status=Job.RUNNING, progress=0, statusComment='Intialization...')
+		base_path = "{}".format(os.getenv('HOME')) #Mandatory for Singularity
+		working_path = os.path.join(base_path, str(job.id))
 
-    # parse arguments
-    parser = argparse.ArgumentParser(
-        description="unet_image_segmentation using deep learning")
-    parser.add_argument('-p', type=int, required=True,
-                        help="the project id")
-    parser.add_argument('-i', type=str, required=True,
-                        help="the image id")
-    parser.add_argument('-wd', type=str, required=True,
-                        help="the local working directory where images are downloaded")
+		#Loading models from models directory
+		with tf.device('/cpu:0')
+			h_model = load_model('models/head_tversky_9963.hdf5', compile=False) #head model
+			h_model.compile(optimizer='adam', loss=tversky_loss,
+					metrics=['accuracy'])
+			op_model = load_model('models/op_ce_9989.hdf5') #operculum model
 
-    args = parser.parse_args()
-
-    ###############################################################################
-    cred = json.load(open('credentials-jsnow.json'))
-
-    ###############################################################################
-    with tf.device('/cpu:0'):
-        h_model = load_model('./models/head_tversky_9963.hdf5', compile=False)
-        h_model.compile(optimizer='adam', loss=tversky_loss,
-                    metrics=['accuracy'])
-        op_model = load_model('./models/op_ce_9989.hdf5')
-    # model = load_model('./models/all_tversky_9959.hdf5') #for three class
-    ###############################################################################
-
-    # =============================================================================
-    with Cytomine(host='https://research.cytomine.be', public_key='66e2e74c-3959-4cae-94a7-13d7acd332ac',
-                  private_key='109eb813-0515-4023-8499-30e251fe15eb') as conn:
-        images = ImageInstanceCollection().fetch_with_filter('project', args.p)
-
-        if args.i != 'all':  # select only given image instances = [image for image in image_instances if image.id in id_list]
+		#Select images to process
+		images = ImageInstanceCollection().fetch_with_filter('project', conn.parameters.cytomine_id_project)
+		if conn.parameters.cytomine_id_images != 'all': #select only given image instances = [image for image in image_instances if image.id in id_list]
             images = [_ for _ in images if _.id
                       in map(lambda x: int(x.strip()),
                              args.i.split(','))]
         images_id = [image.id for image in images]
 
-        img_path = os.path.join(args.wd, 'images')
-        if not os.path.exists(img_path):
-            os.makedirs(img_path)
+		# Download selected images into 'working_directory'
+		img_path = os.path.join(working_path, 'images')
+		if not os.path.exists(img_path):
+			os.makedirs(image_path)
 
-        for image in images:
-            fname, fext = os.path.splitext(image.filename)
-            if image.download(dest_pattern=os.path.join(
-                    img_path, "{}{}".format(image.id, fext))) is not True:
-                print('Failed to download image {}'.format(image.filename))
+		for image in conn.monitor(
+			images, start=2, end=50, period=0.1,
+			prefix = 'Downloading images into working directory...'):
+			fname, fext = os.path.splitext(image.filename)
+			if image.download(dest_pattern=os.path.join(
+					img_path, "{}{}".format(image.id,fext))) is not True:  #images are downloaded with image_ids as names
+				print('Failed to download image {}'.format(image.filename))
 
-        # Prepare image file paths from image directory for execution
-        image_paths = glob.glob(os.path.join(img_path, '*'))
-        for i in range(len(image_paths)):
+		# Prepare image file paths from image directory for execution
+		conn.job.update(progress=50,
+                        statusComment="Preparing data for execution..")
+		image_paths = glob.glob(os.path.join(img_path,'/*'))
+		for i in range(len(image_paths)):
             img = Image.open(image_paths[i])
             img = img_to_array(img)
 
@@ -100,14 +91,33 @@ if __name__ == "__main__":
             h_polygon = make_polygon(h_mask)
             op_polygon = make_polygon(op_mask)
 
-         #   image_id = next((x.id for x in images if x.id == fname), None)
-            annotations = AnnotationCollection()
-            annotations.append(
-                Annotation(location=h_polygon[0].wkt, id_image=fname, id_terms=143971108, id_project=args.p))
-            annotations.append(
-                Annotation(location=op_polygon[0].wkt, id_image=fname, id_term=143971084, id_project=args.p))
-            annotations.save()
+			conn.job.update(
+            status=Job.RUNNING, progress=95,
+            statusComment="Uploading new annotations to Cytomine server..")
 
-        # project 142037659
+			annotations = AnnotationCollection()
+			annotations.append(Annotation(location=h_polygon[0].wkt, id_image=fname, id_terms = 143971108, id_project=conn.parameters.cytomine_id_project))
+			annotations.append(Annotation(location=op_polygon[0].wkt, id_image=fname, id_term = 143971084, id_project=conn.parameters.cytomine_id_project))
+			annotations.save()
 
-    # =============================================================================
+		conn.job.update(status=Job.TERMINATED, status_comment="Finish", progress=100)
+
+
+
+if __name__ == '__main__':
+	main(sys.argv[1:])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
