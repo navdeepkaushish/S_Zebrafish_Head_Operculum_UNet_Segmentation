@@ -35,7 +35,6 @@ ADD models/head_tversky_9963.hdf5 /models/head_tversky_9963.hdf5
 
 
 
-
 # ---------------------------------------------------#
 # 6. Install scripts and setup entry point
 # ---------------------------------------------------#
