@@ -32,12 +32,6 @@ ADD models/head_ce_9963.hdf5 /models/head_ce_9963.hdf5
 ADD models/op_ce_9989.hdf5 /models/op_ce_9989.hdf5
 ADD models/head_tversky_9963.hdf5 /models/head_tversky_9963.hdf5
 
-RUN cd /models/all_tversky_9959.hdf5
-RUN cd /models/head_ce_9963.hdf5
-RUN cd /models/op_ce_9989.hdf5
-RUN cd /models/head_tversky_9963.hdf5
-
-
 
 
 
