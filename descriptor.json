@@ -6,7 +6,7 @@
     },
     "schema-version": "cytomine-0.1",
     "description": "Segmentation of flourescent zebrafish images",
-    "command-line": "python run.py CYTOMINE_HOST CYTOMINE_PUBLIC_KEY CYTOMINE_PRIVATE_KEY CYTOMINE_ID_PROJECT CYTOMINE_ID_SOFTWARE CYTOMINE_ID_IMAGES",
+    "command-line": "python run.py CYTOMINE_HOST CYTOMINE_PUBLIC_KEY CYTOMINE_PRIVATE_KEY CYTOMINE_ID_PROJECT CYTOMINE_ID_SOFTWARE CYTOMINE_ID_IMAGES CYTOMINE_ID_HEAD_TERM CYTOMINE_ID_OPERCULUM_TERM",
     "inputs": [
         {
         	"id": "cytomine_host",
