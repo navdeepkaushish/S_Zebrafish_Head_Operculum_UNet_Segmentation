@@ -100,9 +100,9 @@ def main(argv):
                 statusComment="Uploading new annotations to Cytomine server..")
 
             annotations = AnnotationCollection()
-            annotations.append(Annotation(location=h_polygon[0].wkt, id_image=fname, id_terms=143971108,
+            annotations.append(Annotation(location=h_polygon[0].wkt, id_image=fname, id_terms=conn.parameters.cytomine_id_head_term,
                                           id_project=conn.parameters.cytomine_id_project))
-            annotations.append(Annotation(location=op_polygon[0].wkt, id_image=fname, id_term=143971084,
+            annotations.append(Annotation(location=op_polygon[0].wkt, id_image=fname, id_term=conn.parameters.cytomine_id_operculum_term,
                                           id_project=conn.parameters.cytomine_id_project))
             annotations.save()
 
