@@ -41,10 +41,10 @@ def main(argv):
 
         # Loading models from models directory
         with tf.device('/cpu:0'):
-            h_model = load_model('models/head_tversky_9963.hdf5', compile=False)  # head model
+            h_model = load_model('/models/head_tversky_9963.hdf5', compile=False)  # head model
             h_model.compile(optimizer='adam', loss=tversky_loss,
                             metrics=['accuracy'])
-            op_model = load_model('models/op_ce_9989.hdf5')  # operculum model
+            op_model = load_model('/models/op_ce_9989.hdf5')  # operculum model
 
         # Select images to process
         images = ImageInstanceCollection().fetch_with_filter('project', conn.parameters.cytomine_id_project)
