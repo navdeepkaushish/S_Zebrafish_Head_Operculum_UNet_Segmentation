@@ -181,6 +181,7 @@ def make_polygon(mask):
     mask = mask[::-1, :]  # for cytomine bottom left
     mask = np.ascontiguousarray(mask, dtype=np.uint8)
     _, thresh = cv.threshold(mask, 0.001, 255, 0)
+    thresh = cv.medianBlur(thresh,11)
     thresh = thresh.astype(np.uint8)
     components = find_components(thresh)
     #     contour = np.squeeze(contour[0])
