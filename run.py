@@ -72,37 +72,51 @@ def main(argv):
         conn.job.update(progress=50,
                         statusComment="Preparing data for execution..")
         image_paths = glob.glob(os.path.join(img_path, '*'))
+        std_img_size = (1032,1376)   #maximum size that the model can handle
         for i in range(len(image_paths)):
-            img = Image.open(image_paths[i])
-            img = img_to_array(img)
+            org_img = Image.open(image_paths[9])
+            
 
             filename = os.path.basename(image_paths[i])
             fname, fext = os.path.splitext(filename)
             fname = int(fname)
-            org_size = img.shape[:2]
+            org_img = img_to_array(org_img)
+            img = org_img.copy()
+            org_size = org_img.shape[:2]
+            asp_ratio = org_size[0] / org_size[1]  #for cropping and upscaling to original size
+            if org_size[1] > std_img_size[1]:
+                img = tf.image.resize(img, (675,900), method='nearest')
+                img = tf.image.resize_with_crop_or_pad(img, 1032,1376)
+                h_mask = predict_mask(img, h_model)
+                h_mask = crop_to_aspect(h_mask, asp_ratio)
+                h_mask = tf.image.resize(h_mask, std_img_size, method='nearest')
+                h_mask = tf.image.resize_with_crop_or_pad(h_mask, 675,900)
+                h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
+            else:
+                h_mask = predict_mask(img, h_model)
+                h_mask = crop_to_aspect(h_mask, asp_ratio)
+                h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
+        
+            crop_op_img = cropped(h_up_mask, org_img)
 
-            h_mask = predict_mask(img, h_model)
-            size = h_mask.shape[:2]
-            cropped_image = cropped(h_mask, img)
+            op_asp_ratio = crop_op_img.shape[0] / crop_op_img.shape[1]
+            op_mask = predict_mask(crop_op_img, op_model)
+            op_mask = crop_to_aspect(op_mask, op_asp_ratio)
+            op_mask = tf.image.resize(op_mask, (crop_op_img.shape[0], crop_op_img.shape[1]), method='nearest')
+            op_up_mask = tf.image.resize_with_crop_or_pad(op_mask, org_size[0], org_size[1])
+        
 
-            op_mask = predict_mask(cropped_image, op_model)
-            op_upsize = cropped_image.shape[:2]
-
-            op_mask = tf.image.resize(op_mask, op_upsize, method='bilinear')
-            op_mask = op_pad_up(h_mask, op_mask, size, org_size)
-            h_mask = tf.image.resize(h_mask, org_size, method='bilinear')
-
-            h_polygon = make_polygon(h_mask)
-            op_polygon = make_polygon(op_mask)
+            h_polygon = h_make_polygon(h_up_mask)
+            op_polygon = o_make_polygon(op_up_mask)
 
             conn.job.update(
                 status=Job.RUNNING, progress=95,
                 statusComment="Uploading new annotations to Cytomine server..")
 
             annotations = AnnotationCollection()
-            annotations.append(Annotation(location=h_polygon[0].wkt, id_image=fname, id_terms=conn.parameters.cytomine_id_head_term,
+            annotations.append(Annotation(location=h_polygon[0].wkt, id_image=fname, id_terms=143971108,
                                           id_project=conn.parameters.cytomine_id_project))
-            annotations.append(Annotation(location=op_polygon[0].wkt, id_image=fname, id_term=conn.parameters.cytomine_id_operculum_term,
+            annotations.append(Annotation(location=op_polygon[0].wkt, id_image=fname, id_term=143971084,
                                           id_project=conn.parameters.cytomine_id_project))
             annotations.save()
 

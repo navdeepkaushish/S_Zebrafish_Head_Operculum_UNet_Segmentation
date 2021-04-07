@@ -10,7 +10,23 @@ import tensorflow.keras.backend as K
 #import numpy as np
 
 
-smooth = 1
+    
+###############################################################################
+smooth=1
+
+def tversky(y_true, y_pred):
+    y_true_pos = K.flatten(y_true)
+    y_pred_pos = K.flatten(y_pred)
+    true_pos = K.sum(y_true_pos * y_pred_pos)
+    false_neg = K.sum(y_true_pos * (1-y_pred_pos))
+    false_pos = K.sum((1-y_true_pos)*y_pred_pos)
+    alpha = 0.5
+    return (true_pos + smooth)/(true_pos + alpha*false_neg + (1-alpha)*false_pos + smooth)
+
+
+def tversky_loss(y_true, y_pred):
+    return 1 - tversky(y_true,y_pred)
+"""
 def tversky_loss(y_true, y_pred):
     alpha = 0.5
     beta  = 0.5
@@ -28,6 +44,7 @@ def tversky_loss(y_true, y_pred):
     
     Ncl = K.cast(K.shape(y_true)[-1], 'float32')
     return Ncl-T
+"""
 ###############################################################################
 def dice_coef(y_true, y_pred):
     y_true_f = K.flatten(y_true)
@@ -39,7 +56,7 @@ def dice_coef(y_true, y_pred):
 def dice_coef_loss(y_true, y_pred):
     return 1.-dice_coef(y_true, y_pred)
 # =============================================================================
-def focal_loss(gamma=2., alpha=4.):
+def focal_loss(gamma=2., alpha=0.25):
 
     gamma = float(gamma)
     alpha = float(alpha)
@@ -75,3 +92,11 @@ def focal_loss(gamma=2., alpha=4.):
         reduced_fl = tf.reduce_max(fl, axis=1)
         return tf.reduce_mean(reduced_fl)
     return focal_loss_fixed 
+    
+def jaccard_loss(y_true, y_pred):
+    """ Calculates mean of Jaccard distance as a loss function """
+    intersection = K.sum(K.abs(y_true * y_pred), axis=-1)
+    sum_ = K.sum(K.abs(y_true) + K.abs(y_pred), axis=-1)
+    jac = (intersection + smooth) / (sum_ - intersection + smooth)
+    return (1 - jac) * smooth
+    

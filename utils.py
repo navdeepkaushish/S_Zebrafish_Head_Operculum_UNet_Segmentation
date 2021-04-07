@@ -16,7 +16,7 @@ def predict_mask(image, model):
     """
 	Predict the mask from image
 	"""
-    image = tf.image.resize(image, (256, 256), method='nearest')
+    image = tf.image.resize_with_pad(image, 512, 512, method='nearest')
 
     image = tf.cast(image, tf.float32) / 255.0  # normalize the image
     image = tf.expand_dims(image, 0)
@@ -32,9 +32,9 @@ def bb_pts(mask):
 	return coordinate points from predicted mask
 	"""
     #    mask = mask.numpy()
-    mask = np.squeeze(mask, axis=2)
+    mask_arr = np.squeeze(mask, axis=2)
 
-    coord = np.where(mask == [1])
+    coord = np.where(mask_arr == [1])
     y_min = min(coord[0])
     y_max = max(coord[0])
     x_max = max(coord[1])
@@ -68,7 +68,7 @@ def bb_pts(mask):
         y_max = y_max + rem_y
 
     pts = [x_min, y_min, x_max, y_max]
-    pts = np.asarray(pts)
+    pts = np.asarray(pts).astype(int)
 
     return pts
 
@@ -91,21 +91,24 @@ def upscale_pts(pts, size, up_size):
 
     return [up_x1, up_y1, up_x2, up_y2]
 
+def crop_to_aspect(mask, asp_ratio):
+    cr_h = mask.shape[0] * asp_ratio
+    cr_h = int(cr_h)
+    cr_w = mask.shape[1]
+    
+    crop_mask = tf.image.resize_with_crop_or_pad(mask, cr_h, cr_w)
+    
+    return crop_mask
 
-def cropped(pred_mask, image):
+def cropped(mask, image):
     """
 	Creating cropped image from original size image
 	"""
-    size = (pred_mask.shape[0], pred_mask.shape[1])
-    upsize = (image.shape[0], image.shape[1])
-    bbox_pts = bb_pts(pred_mask)
-    up_pts = upscale_pts(bbox_pts, size, upsize)
-    up_pts = np.asarray(up_pts)
-    up_pts = tf.dtypes.cast(up_pts, tf.int32)
-    w = up_pts[0]
-    h = up_pts[1]
-    tr_h = up_pts[3] - up_pts[1]  # target height
-    tr_w = up_pts[2] - up_pts[0]  # target width
+    bbox_pts = bb_pts(mask)
+    w = bbox_pts[0]
+    h = bbox_pts[1]
+    tr_h = bbox_pts[3] - bbox_pts[1]  # target height
+    tr_w = bbox_pts[2] - bbox_pts[0]  # target width
     image = tf.image.crop_to_bounding_box(image, h, w, tr_h, tr_w)
 
     return image
@@ -128,13 +131,13 @@ def draw_contours(image, h_mask, op_mask):
     h_contours, _ = cv.findContours(head_thresh, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
     o_contours, _ = cv.findContours(op_thresh, cv.RETR_TREE, cv.CHAIN_APPROX_NONE)
 
-    cv.drawContours(br_main, h_contours, -1, (0, 255, 255), 3)
-    cv.drawContours(br_main, o_contours, -1, (255, 0, 255), 3)
+    cv.drawContours(br_main, h_contours, -1, (0, 255, 255), 1)
+    cv.drawContours(br_main, o_contours, -1, (255, 0, 255), 1)
 
     plt.imshow(br_main)
 
 
-def find_components(image):
+def h_find_components(image):
     contours, hierarchy = cv.findContours(image, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
 
     components = []
@@ -168,7 +171,47 @@ def find_components(image):
             else:
                 tops_remaining = False
     h, w = image.shape[:2]
-    min_area = int(0.0002 * w * h)
+    min_area = int(0.02 * w * h)
+    for i, component in enumerate(components):
+        components[i] = Polygon(components[i][0])
+    n_comp = [component for component in components if component.area > min_area]
+
+    return n_comp
+def o_find_components(image):
+    contours, hierarchy = cv.findContours(image, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+
+    components = []
+    if len(contours) > 0:
+        top_index = 0
+        tops_remaining = True
+        while tops_remaining:
+            exterior = contours[top_index][:, 0, :].tolist()
+
+            interiors = []
+            # check if there are children and process if necessary
+            if hierarchy[0][top_index][2] != -1:
+                sub_index = hierarchy[0][top_index][2]
+                subs_remaining = True
+                while subs_remaining:
+                    interiors.append(contours[sub_index][:, 0, :].tolist())
+
+                    # check if there is another sub contour
+                    if hierarchy[0][sub_index][0] != -1:
+                        sub_index = hierarchy[0][sub_index][0]
+                    else:
+                        subs_remaining = False
+
+            # add component tuple to components only if exterior is a polygon
+            if len(exterior) > 3:
+                components.append((exterior, interiors))
+
+            # check if there is another top contour
+            if hierarchy[0][top_index][0] != -1:
+                top_index = hierarchy[0][top_index][0]
+            else:
+                tops_remaining = False
+    h, w = image.shape[:2]
+    min_area = int(0.00002 * w * h)
     for i, component in enumerate(components):
         components[i] = Polygon(components[i][0])
     n_comp = [component for component in components if component.area > min_area]
@@ -176,14 +219,27 @@ def find_components(image):
     return n_comp
 
 
-def make_polygon(mask):
-    mask = np.array(mask)
+def h_make_polygon(mask):
+    #mask = np.array(mask)
     mask = mask[::-1, :]  # for cytomine bottom left
     mask = np.ascontiguousarray(mask, dtype=np.uint8)
     _, thresh = cv.threshold(mask, 0.001, 255, 0)
-    thresh = cv.medianBlur(thresh,11)
+    thresh = cv.medianBlur(thresh,9)
     thresh = thresh.astype(np.uint8)
-    components = find_components(thresh)
+    components = h_find_components(thresh)
+    #     contour = np.squeeze(contour[0])
+    #     polygon = Polygon(contour)
+
+    return components
+
+def o_make_polygon(mask):
+    #mask = np.array(mask)
+    mask = mask[::-1, :]  # for cytomine bottom left
+    mask = np.ascontiguousarray(mask, dtype=np.uint8)
+    _, thresh = cv.threshold(mask, 0.001, 255, 0)
+    thresh = cv.medianBlur(thresh,5)
+    thresh = thresh.astype(np.uint8)
+    components = o_find_components(thresh)
     #     contour = np.squeeze(contour[0])
     #     polygon = Polygon(contour)
 
@@ -207,3 +263,15 @@ def op_pad_up(h_mask, op_mask, size, upsize):
     pad_arr = np.expand_dims(pad_arr, axis=2)
 
     return pad_arr
+
+def pad_to_patch(image, patch_size):
+    """
+    Padd the image to match with the integer patch count
+    """
+    h = im.shape[0]
+    w = im.shape[1]
+    h_offset = (patch_size - h % patch_size)//2
+    w_offset = (patch_size - w % patch_size)//2
+
+    re_image = cv.copyMakeBorder(im, h_offset, h_offset, w_offset, w_offset, cv.BORDER_REFLECT)
+    return re_image
