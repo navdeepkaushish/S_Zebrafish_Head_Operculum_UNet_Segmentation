@@ -44,7 +44,7 @@ def main(argv):
             h_model = load_model('/models/head_dice_9974.hdf5', compile=False)  # head model
             h_model.compile(optimizer='adam', loss=dice_coef_loss,
                             metrics=['accuracy'])
-            op_model = load_model('/models/op_dice_9991.hdf5')  # operculum model
+            op_model = load_model('/models/op_dice_9991.hdf5', compile=False)  # operculum model
             op_model.compile(optimizer='adam', loss=dice_coef_loss,
                             metrics=['accuracy'])
 
