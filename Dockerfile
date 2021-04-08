@@ -8,9 +8,9 @@ FROM python:3.7-stretch
 # Install data/models dependencies
 # ---------------------------------------------------#
 RUN mkdir -p /models
-ADD models/threeclass_tv_9974.hdf5 /models/threeclass_tv_9974.hdf5
-ADD models/head_dice_9975.hdf5 /models/head_dice_9975.hdf5
-ADD models/op_dice_9991.hdf5 /models/op_dice_9991.hdf5
+ADD models/head_jacc_sm_9975.hdf5 /models/head_jacc_sm_9975.hdf5
+ADD models/op_dice_sm_9991.hdf5 /models/op_dice_sm_9991.hdf5
+ADD models/op_ce_sm_9991.hdf5 /models/op_ce_sm_9991.hdf5
 #ADD models/head_tversky_9963.hdf5 /models/head_tversky_9963.hdf5
 
 
