@@ -12,11 +12,11 @@ import matplotlib.pyplot as plt
 from shapely.geometry import Polygon
 
 
-def predict_mask(image, model):
+def predict_mask(image, model, size):
     """
 	Predict the mask from image
 	"""
-    image = tf.image.resize_with_pad(image, 512, 512, method='nearest')
+    image = tf.image.resize_with_pad(image, size, size, method='nearest')
 
     image = tf.cast(image, tf.float32) / 255.0  # normalize the image
     image = tf.expand_dims(image, 0)
@@ -224,7 +224,7 @@ def h_make_polygon(mask):
     mask = mask[::-1, :]  # for cytomine bottom left
     mask = np.ascontiguousarray(mask, dtype=np.uint8)
     _, thresh = cv.threshold(mask, 0.001, 255, 0)
-    thresh = cv.medianBlur(thresh,9)
+    thresh = cv.medianBlur(thresh,11)
     thresh = thresh.astype(np.uint8)
     components = h_find_components(thresh)
     #     contour = np.squeeze(contour[0])
@@ -237,7 +237,7 @@ def o_make_polygon(mask):
     mask = mask[::-1, :]  # for cytomine bottom left
     mask = np.ascontiguousarray(mask, dtype=np.uint8)
     _, thresh = cv.threshold(mask, 0.001, 255, 0)
-    thresh = cv.medianBlur(thresh,5)
+    thresh = cv.medianBlur(thresh,9)
     thresh = thresh.astype(np.uint8)
     components = o_find_components(thresh)
     #     contour = np.squeeze(contour[0])
