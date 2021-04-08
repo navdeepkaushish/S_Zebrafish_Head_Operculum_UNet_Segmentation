@@ -75,6 +75,7 @@ def main(argv):
                         statusComment="Preparing data for execution..")
         image_paths = glob.glob(os.path.join(img_path, '*'))
         std_img_size = (1032,1376)   #maximum size that the model can handle
+        model_size = 256
         for i in range(len(image_paths)):
             org_img = Image.open(image_paths[9])
             
@@ -89,20 +90,20 @@ def main(argv):
             if org_size[1] > std_img_size[1]:
                 img = tf.image.resize(img, (675,900), method='nearest')
                 img = tf.image.resize_with_crop_or_pad(img, 1032,1376)
-                h_mask = predict_mask(img, h_model)
+                h_mask = predict_mask(img, h_model,model_size)
                 h_mask = crop_to_aspect(h_mask, asp_ratio)
                 h_mask = tf.image.resize(h_mask, std_img_size, method='nearest')
                 h_mask = tf.image.resize_with_crop_or_pad(h_mask, 675,900)
                 h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
             else:
-                h_mask = predict_mask(img, h_model)
+                h_mask = predict_mask(img, h_model, model_size)
                 h_mask = crop_to_aspect(h_mask, asp_ratio)
                 h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
         
             crop_op_img = cropped(h_up_mask, org_img)
 
             op_asp_ratio = crop_op_img.shape[0] / crop_op_img.shape[1]
-            op_mask = predict_mask(crop_op_img, op_model)
+            op_mask = predict_mask(crop_op_img, op_model, model_size)
             op_mask = crop_to_aspect(op_mask, op_asp_ratio)
             op_mask = tf.image.resize(op_mask, (crop_op_img.shape[0], crop_op_img.shape[1]), method='nearest')
             op_up_mask = tf.image.resize_with_crop_or_pad(op_mask, org_size[0], org_size[1])
