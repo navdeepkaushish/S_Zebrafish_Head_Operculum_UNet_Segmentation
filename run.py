@@ -46,7 +46,7 @@ def main(argv):
                             metrics=['accuracy'])
             op_model = load_model('/models/op_ce_sm_9991.hdf5', compile=True)  # operculum model
             #op_model.compile(optimizer='adam', loss=dice_coef_loss,
-            #                metrics=['accuracy'])
+                            #metrics=['accuracy'])
 
         # Select images to process
         images = ImageInstanceCollection().fetch_with_filter('project', conn.parameters.cytomine_id_project)
@@ -77,13 +77,9 @@ def main(argv):
         std_img_size = (1032,1376)   #maximum size that the model can handle
         model_size = 256
         for i in range(len(image_paths)):
-<<<<<<< HEAD
-            org_img = Image.open(image_paths[i]) 
-=======
-            org_img = Image.open(image_paths[i])
->>>>>>> f7e3e0eef42d489b7104b9bf6778f359b234fa6a
-            
 
+            org_img = Image.open(image_paths[i]) 
+            
             filename = os.path.basename(image_paths[i])
             fname, fext = os.path.splitext(filename)
             fname = int(fname)
