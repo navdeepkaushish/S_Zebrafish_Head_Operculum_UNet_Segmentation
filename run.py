@@ -44,7 +44,7 @@ def main(argv):
             h_model = load_model('/models/head_jacc_sm_9975.hdf5', compile=False)  # head model
             h_model.compile(optimizer='adam', loss=dice_coef_loss,
                             metrics=['accuracy'])
-            op_model = load_model('/models/op_tv_sm_9991.hdf5', compile=False)  # operculum model
+            op_model = load_model('/models/op_ce_sm_9991.hdf5', compile=True)  # operculum model
             op_model.compile(optimizer='adam', loss=dice_coef_loss,
                             metrics=['accuracy'])
 
@@ -77,7 +77,11 @@ def main(argv):
         std_img_size = (1032,1376)   #maximum size that the model can handle
         model_size = 256
         for i in range(len(image_paths)):
+<<<<<<< HEAD
+            org_img = Image.open(image_paths[i]) 
+=======
             org_img = Image.open(image_paths[i])
+>>>>>>> f7e3e0eef42d489b7104b9bf6778f359b234fa6a
             
 
             filename = os.path.basename(image_paths[i])
@@ -95,18 +99,26 @@ def main(argv):
                 h_mask = tf.image.resize(h_mask, std_img_size, method='nearest')
                 h_mask = tf.image.resize_with_crop_or_pad(h_mask, 675,900)
                 h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
+                
             else:
                 h_mask = predict_mask(img, h_model, model_size)
                 h_mask = crop_to_aspect(h_mask, asp_ratio)
                 h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
         
-            crop_op_img = cropped(h_up_mask, org_img)
+            box = bb_pts(h_up_mask)  # bounding box points for operculum (x_min, y_min, x_max, y_max)
+            w = box[0]
+            h = box[1]
+            tr_h = box[3] - box[1]  # target height
+            tr_w = box[2] - box[0]  # target width
+            crop_op_img = tf.image.crop_to_bounding_box(org_img, h, w, tr_h, tr_w)
 
             op_asp_ratio = crop_op_img.shape[0] / crop_op_img.shape[1]
             op_mask = predict_mask(crop_op_img, op_model, model_size)
             op_mask = crop_to_aspect(op_mask, op_asp_ratio)
             op_mask = tf.image.resize(op_mask, (crop_op_img.shape[0], crop_op_img.shape[1]), method='nearest')
-            op_up_mask = tf.image.resize_with_crop_or_pad(op_mask, org_size[0], org_size[1])
+            op_up_mask = np.zeros((org_img.shape[0],org_img.shape[1],1)).astype(np.uint8) # array of zeros to be filled with op mask
+            op_up_mask[box[1]:box[3], box[0]:box[2]] = op_mask # paste op_mask in org_img (reversing the crop operation)
+            #op_up_mask = tf.image.resize_with_crop_or_pad(op_mask, org_size[0], org_size[1])
         
 
             h_polygon = h_make_polygon(h_up_mask)
