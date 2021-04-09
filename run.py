@@ -45,8 +45,8 @@ def main(argv):
             h_model.compile(optimizer='adam', loss=dice_coef_loss,
                             metrics=['accuracy'])
             op_model = load_model('/models/op_ce_sm_9991.hdf5', compile=True)  # operculum model
-            op_model.compile(optimizer='adam', loss=dice_coef_loss,
-                            metrics=['accuracy'])
+            #op_model.compile(optimizer='adam', loss=dice_coef_loss,
+            #                metrics=['accuracy'])
 
         # Select images to process
         images = ImageInstanceCollection().fetch_with_filter('project', conn.parameters.cytomine_id_project)
