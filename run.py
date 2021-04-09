@@ -41,7 +41,7 @@ def main(argv):
 
         # Loading models from models directory
         with tf.device('/cpu:0'):
-            h_model = load_model('/models/head_jacc_sm_9975.hdf5', compile=False)  # head model
+            h_model = load_model('/models/head_dice_sm_9975.hdf5', compile=False)  # head model
             h_model.compile(optimizer='adam', loss=dice_coef_loss,
                             metrics=['accuracy'])
             op_model = load_model('/models/op_ce_sm_9991.hdf5', compile=True)  # operculum model
@@ -95,6 +95,11 @@ def main(argv):
                 h_mask = tf.image.resize(h_mask, std_img_size, method='nearest')
                 h_mask = tf.image.resize_with_crop_or_pad(h_mask, 675,900)
                 h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
+                h_up_mask = np.asarray(h_up_mask).astype(np.uint8)
+                _, h_up_mask = cv.threshold(h_up_mask, 0.001, 255, 0)
+                kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (21, 21))
+                h_up_mask = cv.morphologyEx(h_up_mask, cv.MORPH_OPEN, kernel, iterations=7)
+                h_up_mask = np.expand_dims(h_up_mask, axis=-1)
                 
             else:
                 h_mask = predict_mask(img, h_model, model_size)

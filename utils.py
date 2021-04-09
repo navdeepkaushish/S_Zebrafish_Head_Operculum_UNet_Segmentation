@@ -34,7 +34,7 @@ def bb_pts(mask):
     #    mask = mask.numpy()
     mask_arr = np.squeeze(mask, axis=2)
 
-    coord = np.where(mask_arr == [1])
+    coord = np.where(mask_arr == [255])
     y_min = min(coord[0])
     y_max = max(coord[0])
     x_max = max(coord[1])
@@ -224,9 +224,7 @@ def h_make_polygon(mask):
     mask = mask[::-1, :]  # for cytomine bottom left
     mask = np.ascontiguousarray(mask, dtype=np.uint8)
     _, thresh = cv.threshold(mask, 0.001, 255, 0)
-    #thresh = cv.medianBlur(thresh,11)
-    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (21, 21))
-    thresh = cv.morphologyEx(thresh, cv.MORPH_OPEN, kernel, iterations=7)
+    thresh = cv.medianBlur(thresh,11)
     #thresh = thresh.astype(np.uint8)
     components = h_find_components(thresh)
     #     contour = np.squeeze(contour[0])
