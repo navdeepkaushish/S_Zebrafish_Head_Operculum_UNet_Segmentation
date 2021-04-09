@@ -15,7 +15,7 @@ from tensorflow.keras.optimizers import SGD
 from tensorflow.keras.preprocessing.image import load_img, img_to_array, array_to_img
 import tensorflow.keras.backend as K
 from utils import *
-from loss_functions import tversky_loss
+from loss_functions import *
 
 import argparse
 import json
