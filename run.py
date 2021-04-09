@@ -77,7 +77,7 @@ def main(argv):
         std_img_size = (1032,1376)   #maximum size that the model can handle
         model_size = 256
         for i in range(len(image_paths)):
-            org_img = Image.open(image_paths[9])
+            org_img = Image.open(image_paths[i])
             
 
             filename = os.path.basename(image_paths[i])
