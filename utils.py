@@ -224,8 +224,10 @@ def h_make_polygon(mask):
     mask = mask[::-1, :]  # for cytomine bottom left
     mask = np.ascontiguousarray(mask, dtype=np.uint8)
     _, thresh = cv.threshold(mask, 0.001, 255, 0)
-    thresh = cv.medianBlur(thresh,11)
-    thresh = thresh.astype(np.uint8)
+    #thresh = cv.medianBlur(thresh,11)
+    kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (21, 21))
+    thresh = cv.morphologyEx(thresh, cv.MORPH_OPEN, kernel, iterations=7)
+    #thresh = thresh.astype(np.uint8)
     components = h_find_components(thresh)
     #     contour = np.squeeze(contour[0])
     #     polygon = Polygon(contour)
@@ -236,9 +238,12 @@ def o_make_polygon(mask):
     #mask = np.array(mask)
     mask = mask[::-1, :]  # for cytomine bottom left
     mask = np.ascontiguousarray(mask, dtype=np.uint8)
+    
     _, thresh = cv.threshold(mask, 0.001, 255, 0)
+    #kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
+    #thresh = cv.morphologyEx(thresh, cv.MORPH_OPEN, kernel, iterations=5)
     thresh = cv.medianBlur(thresh,9)
-    thresh = thresh.astype(np.uint8)
+    #thresh = thresh.astype(np.uint8)
     components = o_find_components(thresh)
     #     contour = np.squeeze(contour[0])
     #     polygon = Polygon(contour)
