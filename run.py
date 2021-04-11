@@ -93,7 +93,7 @@ def main(argv):
                 h_mask = predict_mask(img, h_model,model_size)
                 h_mask = crop_to_aspect(h_mask, asp_ratio)
                 h_mask = tf.image.resize(h_mask, std_size, method='nearest')
-                h_up_mask = tf.image.resize_with_crop_or_pad(h_mask, 750,1000)
+                h_up_mask = tf.image.resize_with_crop_or_pad(h_mask, 650,900)
                 h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
                 h_up_mask = np.asarray(h_up_mask).astype(np.uint8)
                 _, h_up_mask = cv.threshold(h_up_mask, 0.001, 255, 0)
