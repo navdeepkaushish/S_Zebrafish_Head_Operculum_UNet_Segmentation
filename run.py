@@ -41,7 +41,7 @@ def main(argv):
 
         # Loading models from models directory
         with tf.device('/cpu:0'):
-            h_model = load_model('/models/head_jacc_sm_9975.hdf5', compile=False)  # head model
+            h_model = load_model('/models/head_dice_sm_9975.hdf5', compile=False)  # head model
             h_model.compile(optimizer='adam', loss=dice_coef_loss,
                             metrics=['accuracy'])
             op_model = load_model('/models/op_ce_sm_9991.hdf5', compile=True)  # operculum model
@@ -74,11 +74,11 @@ def main(argv):
         conn.job.update(progress=50,
                         statusComment="Preparing data for execution..")
         image_paths = glob.glob(os.path.join(img_path, '*'))
-        std_img_size = (1032,1376)   #maximum size that the model can handle
+        std_size = (1032,1376)   #maximum size that the model can handle
         model_size = 256
         for i in range(len(image_paths)):
 
-            org_img = Image.open(image_paths[i]) 
+            org_img = Image.open(image_paths[132]) 
             
             filename = os.path.basename(image_paths[i])
             fname, fext = os.path.splitext(filename)
@@ -89,16 +89,19 @@ def main(argv):
             asp_ratio = org_size[0] / org_size[1]  #for cropping and upscaling to original size
             if org_size[1] > std_img_size[1]:
                 img = tf.image.resize(img, (675,900), method='nearest')
-                img = tf.image.resize_with_crop_or_pad(img, 1032,1376)
+                img = tf.image.resize_with_crop_or_pad(img, std_size[0],std_size[1])
                 h_mask = predict_mask(img, h_model,model_size)
                 h_mask = crop_to_aspect(h_mask, asp_ratio)
-                h_mask = tf.image.resize(h_mask, std_img_size, method='nearest')
-                h_mask = tf.image.resize_with_crop_or_pad(h_mask, 675,900)
+                h_mask = tf.image.resize(h_mask, std_size, method='nearest')
+                h_up_mask = tf.image.resize_with_crop_or_pad(h_mask, 750,1000)
                 h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
                 h_up_mask = np.asarray(h_up_mask).astype(np.uint8)
                 _, h_up_mask = cv.threshold(h_up_mask, 0.001, 255, 0)
-                kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (21, 21))
-                h_up_mask = cv.morphologyEx(h_up_mask, cv.MORPH_OPEN, kernel, iterations=7)
+                kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
+                h_up_mask = cv.morphologyEx(h_up_mask, cv.MORPH_OPEN, kernel, iterations=5)
+                h_up_mask = cv.morphologyEx(h_up_mask, cv.MORPH_CLOSE, kernel, iterations=1)
+                #h_up_mask = cv.erode(h_up_mask ,kernel,iterations = 3)
+                #h_up_mask = cv.dilate(h_up_mask ,kernel,iterations = 3)
                 h_up_mask = np.expand_dims(h_up_mask, axis=-1)
                 
             else:
@@ -107,8 +110,9 @@ def main(argv):
                 h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
                 h_up_mask = np.asarray(h_up_mask).astype(np.uint8)
                 _, h_up_mask = cv.threshold(h_up_mask, 0.001, 255, 0)
-                kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
-                h_up_mask = cv.morphologyEx(h_up_mask, cv.MORPH_OPEN, kernel, iterations=5)
+                kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (5, 5))
+                #kernel = np.ones((9,9),np.uint8)
+                h_up_mask = cv.morphologyEx(h_up_mask, cv.MORPH_CLOSE, kernel, iterations=3)
                 h_up_mask = np.expand_dims(h_up_mask, axis=-1)
         
             box = bb_pts(h_up_mask)  # bounding box points for operculum (x_min, y_min, x_max, y_max)
