@@ -87,17 +87,17 @@ def main(argv):
             img = org_img.copy()
             org_size = org_img.shape[:2]
             asp_ratio = org_size[0] / org_size[1]  #for cropping and upscaling to original size
-            if org_size[1] > std_img_size[1]:
+            if org_size[1] > std_size[1]:
                 img = tf.image.resize(img, (675,900), method='nearest')
                 img = tf.image.resize_with_crop_or_pad(img, std_size[0],std_size[1])
                 h_mask = predict_mask(img, h_model,model_size)
                 h_mask = crop_to_aspect(h_mask, asp_ratio)
                 h_mask = tf.image.resize(h_mask, std_size, method='nearest')
-                h_up_mask = tf.image.resize_with_crop_or_pad(h_mask, 650,900)
+                h_up_mask = tf.image.resize_with_crop_or_pad(h_mask, 675,900)
                 h_up_mask = tf.image.resize(h_mask, org_size, method='nearest')
                 h_up_mask = np.asarray(h_up_mask).astype(np.uint8)
                 _, h_up_mask = cv.threshold(h_up_mask, 0.001, 255, 0)
-                kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (15, 15))
+                kernel = cv.getStructuringElement(cv.MORPH_ELLIPSE, (17, 17))
                 h_up_mask = cv.morphologyEx(h_up_mask, cv.MORPH_OPEN, kernel, iterations=5)
                 h_up_mask = cv.morphologyEx(h_up_mask, cv.MORPH_CLOSE, kernel, iterations=1)
                 #h_up_mask = cv.erode(h_up_mask ,kernel,iterations = 3)
