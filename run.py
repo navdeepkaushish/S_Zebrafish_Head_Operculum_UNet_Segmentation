@@ -78,7 +78,7 @@ def main(argv):
         model_size = 256
         for i in range(len(image_paths)):
 
-            org_img = Image.open(image_paths[132]) 
+            org_img = Image.open(image_paths[i]) 
             
             filename = os.path.basename(image_paths[i])
             fname, fext = os.path.splitext(filename)
