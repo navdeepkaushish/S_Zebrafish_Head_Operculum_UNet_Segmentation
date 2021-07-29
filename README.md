@@ -12,5 +12,5 @@
 - Code is compatible with the open-source tool Cytomine ULiège R&D version (https://uliege.cytomine.org)
 
 **_Reference_**
-- Deep Learning appraoches for Head and Operculum Segmentation in Zebrafish Microscopy Images, Navdeep Kumar et. al.
+- Deep Learning appraoches for Head and Operculum Segmentation in Zebrafish Microscopy Images, Navdeep Kumar et. al. In the 19th International Conference on Computer Analysis of Images and Patterns (CAIP-2021)
 
