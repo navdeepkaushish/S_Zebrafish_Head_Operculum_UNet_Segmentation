@@ -35,7 +35,7 @@ This repository contains code and documentation related to developing and evalua
 
 **Test Predictions**
 
-<p align="center"> <img src="Test_predictions/sample_pred.png" width="600"><br> <em>Figure 1: Example heatmap prediction</em> </p> <br>
+<p align="center"> <img src="Test_predictions/sample_pred.png" width="600"><br> <em>Figure 1: Example test prediction</em> </p> <br>
 
 **_Reference_**
 - Deep Learning appraoches for Head and Operculum Segmentation in Zebrafish Microscopy Images, Navdeep Kumar et. al. In the 19th International Conference on Computer Analysis of Images and Patterns (CAIP-2021)
