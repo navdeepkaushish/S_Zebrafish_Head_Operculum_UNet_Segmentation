@@ -3,12 +3,12 @@
 **Modified UNet for Zebrafish head and operculum segmentation**
 
 **_Description_**
-- Data folder contains the test images
+- Test Images folder contains the test images, you may use 
 - Models folder contains the trained models directly used for testing
-- Model architecture is defined in _unet_modified.py_ 
-- Main file is _run.py_
-- All the supporting functions are written in _utils.py_
-- Custom _loss functions_ used in the models are written in _loss_functions.py_ for **compiling the model**
+- Model architecture is defined in unet_modified.py in src folder
+- Main file is run.py in src folder
+- All the supporting functions are written in src/utils.py
+- Custom _loss functions_ used in the models are written in src/loss_functions.py for **compiling the model**
 - Code is compatible with the open-source tool Cytomine ULiège R&D version (https://uliege.cytomine.org)
 
 **_Reference_**
