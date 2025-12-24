@@ -5,7 +5,7 @@ A Deep Learning application module for Head & Operculum Segmentation in Zebrafis
 
 **Paper Link**
 
-DOI: [19th CAIP 2021 Conference](https://doi.org/10.1007/978-3-030-89128-2 15)). <br>
+DOI: [19th CAIP 2021 Conference](https://doi.org/10.1007/978-3-030-89128-2). <br>
 
 **Abstract (short)**
 
