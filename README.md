@@ -3,6 +3,10 @@
 **Description:**
 A Deep Learning application module for Head & Operculum Segmentation in Zebrafish Microscopy Images
 
+**Paper Link**
+
+DOI: [19th CAIP 2021 Conference](https://doi.org/10.1007/978-3-030-89128-2 15)). <br>
+
 **Abstract (short)**
 
 This repository contains code and documentation related to developing and evaluating deep learning models for segmenting the head and operculum regions of zebrafish larvae in microscopy images. The methods are based on a modified U-Net architecture and include multiple training strategies to address class imbalance.
