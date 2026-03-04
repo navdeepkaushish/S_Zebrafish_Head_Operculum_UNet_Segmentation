@@ -1,4 +1,4 @@
-# zebrafish_image_segmentation
+# Zebrafish Image Segmentation
 
 **Description:**
 A Deep Learning application module for Head & Operculum Segmentation in Zebrafish Microscopy Images
